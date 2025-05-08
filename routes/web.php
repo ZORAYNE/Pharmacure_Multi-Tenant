@@ -41,6 +41,7 @@ Route::get('dashboard', [TenantDashboardController::class, 'index'])->name('tena
 
 
 // Additional routes
+Route::get('/tenant/dashboard', [TenantDashboardController::class, 'index'])->name('tenant.pos.dashboard');
 Route::get('reports/sales', [SaleController::class, 'salesReport'])->name('sales.report');
 Route::get('reports/products', [SaleController::class, 'productReport'])->name('products.report');
 Route::get('sales/{sale}/invoice', [SaleController::class, 'generateInvoice'])->name('sales.invoice');
