@@ -116,7 +116,7 @@ return [
             'driver' => 'mysql',
             'host' => env('DB_TENANT_HOST', '127.0.0.1'),
             'port' => env('DB_TENANT_PORT', '3306'),
-            'database' => env('DB_TENANT_DATABASE', 'tenant_app'),  // Set this properly
+            'database' => env('DB_TENANT_DATABASE', 'tenant_app'),
             'username' => env('DB_TENANT_USERNAME', 'root'),
             'password' => env('DB_TENANT_PASSWORD', ''),
             'unix_socket' => env('DB_SOCKET', ''),

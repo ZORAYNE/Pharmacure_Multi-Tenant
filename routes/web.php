@@ -7,7 +7,9 @@ use App\Http\Controllers\TenantDashboardController;
 use App\Http\Controllers\TenantAuthController;
 use App\Http\Controllers\CentralAdminAuthController;
 use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\SaleController;
 
+// Test database connection
 Route::get('/test-connection', function () {
     try {
         DB::connection('tenant')->getPdo();
@@ -27,26 +29,33 @@ Route::prefix('admin')->group(function () {
     Route::patch('tenants/{id}/revert', [AdminTenantController::class, 'revert'])->name('admin.tenants.revert');
 });
 
-// Tenant self registration
+// Tenant self-registration
 Route::get('tenant/register', [TenantRegistrationController::class, 'showRegistrationForm'])->name('tenant.register');
 Route::post('tenant/register', [TenantRegistrationController::class, 'register']);
 
-// Tenant login routes
-Route::get('login', [TenantAuthController::class, 'showLoginForm'])->name('tenant.login');
-Route::post('login', [TenantAuthController::class, 'login']);
-Route::post('logout', [TenantAuthController::class, 'logout'])->name('tenant.logout')->middleware('auth:tenant');
 
-// Tenant authenticated routes
-Route::get('dashboard', [TenantDashboardController::class, 'index'])->name('tenant.dashboard')->middleware('auth:tenant');
+use App\Http\Middleware\StoreTenantInSession;
 
+// Tenant login routes with StoreTenantInSession middleware to capture tenant query param
+Route::middleware([StoreTenantInSession::class])->group(function () {
+    Route::get('login', [TenantAuthController::class, 'showLoginForm'])->name('tenant.login');
+    Route::post('login', [TenantAuthController::class, 'login']);
+    Route::post('logout', [TenantAuthController::class, 'logout'])->name('tenant.logout')->middleware('auth:tenant');
+});
 
-// Additional routes
-Route::get('/tenant/dashboard', [TenantDashboardController::class, 'index'])->name('tenant.pos.dashboard');
-Route::get('reports/sales', [SaleController::class, 'salesReport'])->name('sales.report');
-Route::get('reports/products', [SaleController::class, 'productReport'])->name('products.report');
-Route::get('sales/{sale}/invoice', [SaleController::class, 'generateInvoice'])->name('sales.invoice');
-Route::get('pos', [SaleController::class, 'index'])->name('pos.index');
-Route::post('sales', [SaleController::class, 'store'])->name('sales.store');
+use App\Http\Middleware\TenantConnection;
+
+// Tenant authenticated routes with tenant connection middleware and tenant prefix
+Route::prefix('{tenant}')->middleware(['auth:tenant', 'tenant.connection'])->group(function () {
+    Route::get('dashboard', [TenantDashboardController::class, 'index'])->name('tenant.dashboard');
+    Route::post('/tenant/users', [TenantDashboardController::class, 'store'])->name('tenant.users.store');
+    Route::get('/tenant/pos/dashboard', [TenantDashboardController::class, 'index'])->name('tenant.pos.dashboard');
+    Route::get('reports/sales', [SaleController::class, 'salesReport'])->name('sales.report');
+    Route::get('reports/products', [SaleController::class, 'productReport'])->name('products.report');
+    Route::get('sales/{sale}/invoice', [SaleController::class, 'generateInvoice'])->name('sales.invoice');
+    Route::get('pos', [SaleController::class, 'index'])->name('pos.index');
+    Route::post('sales', [SaleController::class, 'store'])->name('sales.store');
+});
 
 // Google authentication
 Route::get('auth/google/redirect', [TenantAuthController::class, 'redirectToGoogle'])->name('tenant.auth.google.redirect');

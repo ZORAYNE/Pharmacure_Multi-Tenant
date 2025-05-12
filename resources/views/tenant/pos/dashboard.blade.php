@@ -25,6 +25,16 @@
             <p class="guest-message">You are logged in as a guest. Some features may be limited.</p>
         @endif
 
+        <form action="{{ route('tenant.users.store') }}" method="POST">
+            @csrf
+            <input type="text" name="name" placeholder="User Name" required>
+            <input type="email" name="email" placeholder="User Email" required>
+            <select name="role">
+                <option value="pharmacist">Pharmacist</option>
+            </select>
+            <button type="submit">Add User</button>
+        </form>
+   
         <h2>Available Products</h2>
         <table>
             <thead>

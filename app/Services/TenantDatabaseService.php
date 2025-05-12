@@ -37,8 +37,8 @@ class TenantDatabaseService
             DB::statement($query);
             \Log::info("Database created: {$databaseName}");
     
-            // Create the necessary tables after creating the database
-            $this->createTables($databaseName);
+            // Removed manual table creation to avoid conflicts with migrations
+            // $this->createTables($databaseName);
         } catch (\Exception $e) {
             \Log::error("Failed to create database: " . $e->getMessage());
             throw new \Exception("Failed to create database: " . $e->getMessage());
@@ -86,7 +86,9 @@ class TenantDatabaseService
 
     public function runMigrations(string $databaseName): void
     {
-        $tenantConnection = $this->getTenantConnection($databaseName);
+        // Dynamically configure tenant database connection for migrations
+        $tenantConnection = config('database.connections.mysql');
+        $tenantConnection['database'] = $databaseName;
         Config::set("database.connections.tenant", $tenantConnection);
         DB::purge('tenant');
 
@@ -106,7 +108,9 @@ class TenantDatabaseService
         // Helper method to get the database name
         private function getDatabaseName($tenantName)
         {
-            return 'tenant_' . $tenantName; // Adjust this as per your naming convention
+            // Sanitize tenant name: lowercase, replace spaces with underscores
+            $sanitizedTenantName = strtolower(str_replace(' ', '_', $tenantName));
+            return 'tenant_' . $sanitizedTenantName; // Adjust this as per your naming convention
         }
     
         // Set tenant connection

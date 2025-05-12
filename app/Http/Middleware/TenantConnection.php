@@ -12,7 +12,7 @@ class TenantConnection
 {
     public function handle(Request $request, Closure $next)
 {
-    $tenantName = $request->route('tenant') ?? $request->query('tenant') ?? session('tenant');
+    $tenantName = $request->route('tenant') ?? $request->query('tenant') ?? $request->session()->get('tenant');
 
     if (!$tenantName) {
         abort(400, 'Tenant identifier missing.');

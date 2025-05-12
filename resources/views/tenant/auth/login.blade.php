@@ -25,6 +25,8 @@
         <form method="POST" action="{{ route('tenant.login') }}">
     @csrf
 
+    <input type="hidden" name="tenant" value="{{ request()->query('tenant') }}">
+
     <div>
         <label for="email">Email:</label>
         <input type="email" name="email" id="email" required>

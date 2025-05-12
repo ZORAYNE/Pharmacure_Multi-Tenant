@@ -37,7 +37,7 @@ class TenantAuthController extends Controller
         $guestUser->password = Hash::make('password');
         $guestUser->save();
         Auth::guard('tenant')->login($guestUser);
-        return redirect()->route('tenant.dashboard')->with('message', 'Logged in as guest.');
+        return redirect()->route('tenant.pos.dashboard')->with('message', 'Logged in as guest.');
     }
 
     public function login(Request $request)
@@ -62,7 +62,9 @@ class TenantAuthController extends Controller
             $request->filled('remember')
         )) {
             $request->session()->regenerate();
-            return redirect()->route('tenant.dashboard'); // Updated redirect here
+            // Preserve tenant parameter in redirect
+            $tenantParam = $request->input('tenant');
+            return redirect()->route('tenant.pos.dashboard', ['tenant' => $tenantParam]);
         }
 
         return back()->withErrors(['email' => 'Invalid credentials.']);

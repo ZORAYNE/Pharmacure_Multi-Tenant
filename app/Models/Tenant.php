@@ -13,6 +13,7 @@ class Tenant extends Model
         'tenant_name',
         'full_name',
         'email',
+        'role',
         'password',
         'status',
     ];
