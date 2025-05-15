@@ -46,12 +46,6 @@
     </x-dropdown>
 </div>
 
-<p>Hello, {{ $user->name }} ({{ $user->role }})</p>
-
-@if ($user->role === 'guest')
-    <p class="guest-message">You are logged in as a guest. Some features may be limited.</p>
-@endif
-
 @if($errors->any())
     <div class="error">
         <ul>

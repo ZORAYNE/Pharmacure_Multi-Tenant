@@ -19,12 +19,6 @@
     <div class="container">
         <h1>Welcome to the Pharmacy POS Dashboard</h1>
 
-        <p>Hello, {{ $user->name }} ({{ $user->role }})</p>
-
-        @if ($user->role === 'guest')
-            <p class="guest-message">You are logged in as a guest. Some features may be limited.</p>
-        @endif
-
         <form action="{{ route('tenant.users.store') }}" method="POST">
             @csrf
             <input type="text" name="name" placeholder="User Name" required>

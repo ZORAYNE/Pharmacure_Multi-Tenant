@@ -24,9 +24,9 @@ Route::prefix('admin')->group(function () {
     Route::get('dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
     Route::get('tenants/create', [AdminTenantController::class, 'create'])->name('admin.tenants.create');
     Route::post('tenants', [AdminTenantController::class, 'store'])->name('admin.tenants.store');
-    Route::post('tenants/{id}/accept', [AdminTenantController::class, 'accept'])->name('admin.tenants.accept');
-    Route::delete('tenants/{id}', [AdminTenantController::class, 'delete'])->name('admin.tenants.delete');
-    Route::patch('tenants/{id}/revert', [AdminTenantController::class, 'revert'])->name('admin.tenants.revert');
+    Route::post('tenants/{tenant}/accept', [AdminTenantController::class, 'accept'])->name('admin.tenants.accept');
+    Route::delete('tenants/{tenant}', [AdminTenantController::class, 'delete'])->name('admin.tenants.delete');
+    Route::patch('tenants/{tenant}/revert', [AdminTenantController::class, 'revert'])->name('admin.tenants.revert');
 });
 
 // Tenant self-registration

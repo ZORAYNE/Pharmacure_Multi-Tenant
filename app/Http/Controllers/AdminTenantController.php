@@ -41,9 +41,9 @@ class AdminTenantController extends Controller
        return redirect()->route('admin.dashboard')->with('success', 'Tenant registered successfully. Please accept the tenant to create a database.');
    }
 
-   public function accept($id)
+   public function accept($tenantName)
    {
-       $tenant = Tenant::findOrFail($id);
+       $tenant = Tenant::where('tenant_name', $tenantName)->firstOrFail();
        $tenant->status = 'accepted';
        $tenant->save();
 
@@ -80,9 +80,9 @@ class AdminTenantController extends Controller
        ]);
    }
 
-   public function delete($id)
+   public function delete($tenantName)
    {
-       $tenant = Tenant::findOrFail($id);
+       $tenant = Tenant::where('tenant_name', $tenantName)->firstOrFail();
        $tenantDatabaseName = 'tenant_' . $tenant->tenant_name;
        $tenant->delete(); 
 
@@ -99,9 +99,9 @@ class AdminTenantController extends Controller
        $connection->statement("DROP DATABASE IF EXISTS {$databaseName}");
    }
 
-   public function revert($id)
+   public function revert($tenantName)
    {
-       $tenant = Tenant::findOrFail($id);
+       $tenant = Tenant::where('tenant_name', $tenantName)->firstOrFail();
        $tenant->status = 'pending';
        $tenant->save();
        return redirect()->back()->with('success', 'Tenant status reverted to pending.');

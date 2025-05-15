@@ -20,9 +20,9 @@ class TenantRegistrationController extends Controller
         // Validate the request
         $validator = Validator::make($request->all(), [
             'tenant_name' => 'required|string|regex:/^[A-Za-z0-9 _-]+$/|unique:tenants,tenant_name',
-            'full_name' => 'required|string|max:255',
-            'email' => 'required|email|unique:tenants,email',
-            'password' => 'required|string|min:6|confirmed',
+            'full_name' => 'sometimes|required|string|max:255',
+            'email' => 'sometimes|required|email|unique:tenants,email',
+            'password' => 'sometimes|required|string|min:6|confirmed',
         ]);
 
         if ($validator->fails()) {
@@ -67,7 +67,7 @@ class TenantRegistrationController extends Controller
 
             return redirect()->route('tenant.login')->with('success', 'Tenant registered successfully. You can now log in.');
         } catch (\Exception $e) {
-            $tenant->delete(); // Rollback tenant creation on failure
+            $tenant->delete(); 
             return redirect()->back()->withErrors([
                 'database' => 'Failed to create or migrate tenant database: ' . $e->getMessage()
             ])->withInput();

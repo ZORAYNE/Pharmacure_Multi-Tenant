@@ -29,17 +29,6 @@ class TenantAuthController extends Controller
         'tenants' => $tenants,
     ]);
 }
-
-    protected function loginAsGuest()
-    {
-        $guestUser = new GuestUser();
-        // Hash the password before saving
-        $guestUser->password = Hash::make('password');
-        $guestUser->save();
-        Auth::guard('tenant')->login($guestUser);
-        return redirect()->route('tenant.pos.dashboard')->with('message', 'Logged in as guest.');
-    }
-
     public function login(Request $request)
     {
         $request->validate([
@@ -49,25 +38,51 @@ class TenantAuthController extends Controller
 
         $tenantName = strtolower(str_replace(' ', '_', $request->input('tenant')));
 
+        \Log::info("Attempting to set tenant connection for tenant: {$tenantName}");
         $this->tenantDatabaseService->setTenantConnection($tenantName);
 
         try {
-            DB::connection('tenant')->getPdo(); // Test connection
+            DB::connection('tenant')->getPdo();
+            \Log::info("Successfully connected to tenant database: {$tenantName}");
         } catch (\Exception $e) {
+            \Log::error("Failed to connect to tenant database: {$tenantName}. Error: " . $e->getMessage());
             return back()->withErrors(['tenant' => 'Could not connect to the tenant database.']);
         }
 
-        if (Auth::guard('tenant')->attempt(
-            $request->only('email', 'password'), 
-            $request->filled('remember')
-        )) {
+        // Pass a success message about tenant database connection to the view
+        $connectionMessage = "Database '{$tenantName}' connected successfully.";
+
+        // Debug: Retrieve user by email from tenant connection
+        $email = strtolower($request->input('email'));
+        $user = \App\Models\TenantUser::on('tenant')->where('email', $email)->first();
+
+        if (!$user) {
+            \Log::warning("Tenant login failed: User not found with email {$email} in tenant {$tenantName}");
+            return back()->withErrors(['email' => 'Email not found.'])->withInput($request->only('email', 'tenant'))->with('connectionMessage', $connectionMessage);
+        } else {
+            \Log::info("Tenant login attempt for user {$user->email} in tenant {$tenantName}");
+            // Check password manually
+            if (!\Illuminate\Support\Facades\Hash::check($request->input('password'), $user->password)) {
+                \Log::warning("Tenant login failed: Password mismatch for user {$user->email} in tenant {$tenantName}");
+                return back()->withErrors(['password' => 'Incorrect password.'])->withInput($request->only('email', 'tenant'))->with('connectionMessage', $connectionMessage);
+            } else {
+                \Log::info("Tenant login password verified for user {$user->email} in tenant {$tenantName}");
+            }
+        }
+
+        // Prioritize manual credential check before Auth attempt
+        $user = \App\Models\TenantUser::on('tenant')->where('email', $email)->first();
+
+        if ($user && \Illuminate\Support\Facades\Hash::check($request->input('password'), $user->password)) {
+            Auth::guard('tenant')->login($user, $request->filled('remember'));
             $request->session()->regenerate();
-            // Preserve tenant parameter in redirect
             $tenantParam = $request->input('tenant');
             return redirect()->route('tenant.pos.dashboard', ['tenant' => $tenantParam]);
         }
 
-        return back()->withErrors(['email' => 'Invalid credentials.']);
+        // If authentication fails, return back with error message and tenant query parameter
+        \Log::warning("Tenant login failed: Invalid credentials for email {$request->input('email')} in tenant {$tenantName}");
+        return back()->withErrors(['email' => 'Invalid credentials.'])->withInput($request->only('email', 'tenant'))->with('connectionMessage', $connectionMessage);
     }
 
     public function logout(Request $request)

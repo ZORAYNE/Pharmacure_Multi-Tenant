@@ -87,10 +87,20 @@ class TenantDatabaseService
     public function runMigrations(string $databaseName): void
     {
         // Dynamically configure tenant database connection for migrations
-        $tenantConnection = config('database.connections.mysql');
+        $tenantConnection = config('database.connections.tenant');
+
+        // Set database name dynamically
         $tenantConnection['database'] = $databaseName;
+
+        // Optionally set host, username, password, port dynamically from env or tenant config
+        $tenantConnection['host'] = env('DB_TENANT_HOST', $tenantConnection['host'] ?? '127.0.0.1');
+        $tenantConnection['username'] = env('DB_TENANT_USERNAME', $tenantConnection['username'] ?? 'root');
+        $tenantConnection['password'] = env('DB_TENANT_PASSWORD', $tenantConnection['password'] ?? '');
+        $tenantConnection['port'] = env('DB_TENANT_PORT', $tenantConnection['port'] ?? '3306');
+
         Config::set("database.connections.tenant", $tenantConnection);
         DB::purge('tenant');
+
 
         try {
             Artisan::call('migrate', [
@@ -110,7 +120,8 @@ class TenantDatabaseService
         {
             // Sanitize tenant name: lowercase, replace spaces with underscores
             $sanitizedTenantName = strtolower(str_replace(' ', '_', $tenantName));
-            return 'tenant_' . $sanitizedTenantName; // Adjust this as per your naming convention
+            // Return tenant name as is without prefix for database name
+            return $sanitizedTenantName; // Adjust this as per your naming convention
         }
     
         // Set tenant connection
@@ -119,12 +130,21 @@ class TenantDatabaseService
             // Fetch tenant from central db
             $tenant = Tenant::where('tenant_name', $tenantName)->firstOrFail();
     
-            // Dynamically configure tenant database connection
-            $tenantConnection = config('database.connections.mysql');
-            $tenantConnection['database'] = $this->getDatabaseName($tenantName); // Ensure this is the correct field for the database name
-            Config::set('database.connections.tenant', $tenantConnection);
-    
-            // Purge tenant connection so Laravel reconnects with new config
-            DB::purge('tenant');
+        // Dynamically configure tenant database connection
+        $tenantConnection = config('database.connections.tenant');
+
+        // Set database name dynamically
+        $tenantConnection['database'] = $this->getDatabaseName($tenantName);
+
+        // Optionally set host, username, password, port dynamically from env or tenant config
+        $tenantConnection['host'] = env('DB_TENANT_HOST', $tenantConnection['host'] ?? '127.0.0.1');
+        $tenantConnection['username'] = env('DB_TENANT_USERNAME', $tenantConnection['username'] ?? 'root');
+        $tenantConnection['password'] = env('DB_TENANT_PASSWORD', $tenantConnection['password'] ?? '');
+        $tenantConnection['port'] = env('DB_TENANT_PORT', $tenantConnection['port'] ?? '3306');
+
+        Config::set('database.connections.tenant', $tenantConnection);
+
+        // Purge tenant connection so Laravel reconnects with new config
+        DB::purge('tenant');
         }
     }
