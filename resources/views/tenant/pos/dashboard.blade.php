@@ -19,7 +19,7 @@
     <div class="container">
         <h1>Welcome to the Pharmacy POS Dashboard</h1>
 
-        <form action="{{ route('tenant.users.store') }}" method="POST">
+        <form action="{{ route('tenant.users.store', ['tenant' => request()->route('tenant')]) }}" method="POST">
             @csrf
             <input type="text" name="name" placeholder="User Name" required>
             <input type="email" name="email" placeholder="User Email" required>

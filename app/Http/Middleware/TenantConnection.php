@@ -21,7 +21,8 @@ class TenantConnection
     $tenant = Tenant::where('tenant_name', $tenantName)->firstOrFail();
 
     $conn = config('database.connections.mysql');
-    $conn['database'] = $this->getDatabaseName($tenant->tenant_name); // Use tenant_name as the database name
+    // Fix: Use tenant_name directly as database name instead of calling undefined getDatabaseName()
+    $conn['database'] = $tenant->tenant_name; // Use tenant_name as the database name
     Config::set('database.connections.tenant', $conn);
     DB::purge('tenant');
 

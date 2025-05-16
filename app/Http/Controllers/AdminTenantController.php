@@ -41,6 +41,38 @@ class AdminTenantController extends Controller
        return redirect()->route('admin.dashboard')->with('success', 'Tenant registered successfully. Please accept the tenant to create a database.');
    }
 
+   public function edit($tenantName)
+   {
+       $tenant = Tenant::where('tenant_name', $tenantName)->firstOrFail();
+       return view('admin.tenants.edit', compact('tenant'));
+   }
+
+   public function update(Request $request, $tenantName)
+   {
+       $tenant = Tenant::where('tenant_name', $tenantName)->firstOrFail();
+
+       $validator = Validator::make($request->all(), [
+           'full_name' => 'required|string|max:255',
+           'email' => 'required|email|unique:tenants,email,' . $tenant->id,
+           'password' => 'nullable|string|min:6|confirmed',
+       ]);
+
+       if ($validator->fails()) {
+           return redirect()->back()->withErrors($validator)->withInput();
+       }
+
+       $tenant->full_name = $request->full_name;
+       $tenant->email = $request->email;
+
+       if ($request->filled('password')) {
+           $tenant->password = Hash::make($request->password);
+       }
+
+       $tenant->save();
+
+       return redirect()->route('admin.dashboard')->with('success', 'Tenant updated successfully.');
+   }
+
    public function accept($tenantName)
    {
        $tenant = Tenant::where('tenant_name', $tenantName)->firstOrFail();

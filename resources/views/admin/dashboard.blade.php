@@ -137,6 +137,22 @@
 </head>
 <body>
 
+<!-- Navbar -->
+<nav style="background-color: #007bff; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center;">
+    <div style="font-size: 20px; font-weight: bold;">Central Admin Dashboard</div>
+    <div style="position: relative;">
+        <button id="settingsBtn" style="background: none; border: none; color: white; font-size: 16px; cursor: pointer;">Settings &#x25BC;</button>
+        <div id="settingsDropdown" style="display: none; position: absolute; right: 0; background: white; color: black; border: 1px solid #ccc; border-radius: 4px; min-width: 160px; box-shadow: 0 2px 5px rgba(0,0,0,0.15); z-index: 1001;">
+            <a href="#" id="openUpdaterModalBtnDropdown" style="display: block; padding: 10px 15px; text-decoration: none; color: black; cursor: pointer;">Laravel Updater</a>
+            <a href="{{ route('central.admin.profile.edit') }}" style="display: block; padding: 10px 15px; text-decoration: none; color: black;">Profile</a>
+            <form method="POST" action="{{ route('central.admin.logout') }}" style="margin: 0;">
+                @csrf
+                <button type="submit" style="width: 100%; padding: 10px 15px; border: none; background: none; text-align: left; cursor: pointer; color: black;">Logout</button>
+            </form>
+        </div>
+    </div>
+</nav>
+
 <h2>Registered Tenants</h2>
 @if(session('success'))
     <p class="success">{{ session('success') }}</p>
@@ -177,20 +193,21 @@
                     @if($tenant->status === 'pending')
                         <form method="POST" action="{{ route('admin.tenants.accept', $tenant->tenant_name) }}" style="display:inline;">
                             @csrf
-                            <button type="submit">Accept</button>
+                            <button type="submit" class="button-link">Accept</button>
                         </form>
                         <form method="POST" action="{{ route('admin.tenants.delete', $tenant->tenant_name) }}" style="display:inline;">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" onclick="return confirm('Are you sure you want to delete this tenant?')">Delete</button>
+                            <button type="submit" class="button-link" onclick="return confirm('Are you sure you want to delete this tenant?')">Delete</button>
                         </form>
                     @elseif($tenant->status === 'accepted')
                         <form method="POST" action="{{ route('admin.tenants.revert', $tenant->tenant_name) }}" style="display:inline;">
                             @csrf
                             @method('PATCH')
-                            <button type="submit">Disable (Revert to Pending)</button>
+                            <button type="submit" class="button-link">Disable</button>
                         </form>
                     @endif
+                    <a href="{{ route('admin.tenants.edit', $tenant->tenant_name) }}" class="button-link">Edit</a>
                 </td>
                 <td>
                     @if($tenant->status === 'accepted')
@@ -281,6 +298,120 @@
             modal.style.display = "none";
         }
     }
+</script>
+
+<!-- Updater Modal -->
+<div id="updaterModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <span class="close" id="closeUpdaterModalBtn">&times;</span>
+        <h2>Laravel Updater</h2>
+        <div class="info">
+            <p>Current Version: <span id="currentVersion">{{ $currentVersion }}</span></p>
+            <p>Latest Version: <span id="latestVersion">{{ $latestVersion ?? 'Unknown' }}</span></p>
+        </div>
+        <button id="checkUpdateBtn">Check for Updates</button>
+        <button id="performUpdateBtn" disabled>Perform Update</button>
+        <div id="updaterMessage"></div>
+    </div>
+</div>
+
+<button id="openUpdaterModalBtn" style="margin-left: 10px; padding: 6px 12px; font-size: 14px; cursor: pointer;">Open Updater</button>
+
+<script>
+    const updaterModal = document.getElementById('updaterModal');
+    const openUpdaterModalBtn = document.getElementById('openUpdaterModalBtn');
+    const closeUpdaterModalBtn = document.getElementById('closeUpdaterModalBtn');
+    const checkUpdateBtn = document.getElementById('checkUpdateBtn');
+    const performUpdateBtn = document.getElementById('performUpdateBtn');
+    const updaterMessage = document.getElementById('updaterMessage');
+    const latestVersionSpan = document.getElementById('latestVersion');
+
+    openUpdaterModalBtn.onclick = function() {
+        updaterModal.style.display = 'block';
+    }
+
+    closeUpdaterModalBtn.onclick = function() {
+        updaterModal.style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        if (event.target == updaterModal) {
+            updaterModal.style.display = 'none';
+        }
+    }
+
+    checkUpdateBtn.addEventListener('click', () => {
+        updaterMessage.textContent = 'Checking for updates...';
+        fetch('{{ route("admin.updater.check") }}')
+            .then(response => response.json())
+            .then(data => {
+                if (data.updateAvailable) {
+                    updaterMessage.textContent = 'Update available: ' + data.latestVersion;
+                    latestVersionSpan.textContent = data.latestVersion;
+                    performUpdateBtn.disabled = false;
+                } else {
+                    updaterMessage.textContent = 'No updates available.';
+                    performUpdateBtn.disabled = true;
+                }
+            })
+            .catch(() => {
+                updaterMessage.textContent = 'Error checking for updates.';
+                performUpdateBtn.disabled = true;
+            });
+    });
+
+    performUpdateBtn.addEventListener('click', () => {
+        updaterMessage.textContent = 'Performing update...';
+        performUpdateBtn.disabled = true;
+        fetch('{{ route("admin.updater.perform") }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({})
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updaterMessage.textContent = data.message;
+                    checkUpdateBtn.click(); // Refresh update status
+                } else {
+                    updaterMessage.textContent = 'Update failed: ' + data.message;
+                    performUpdateBtn.disabled = false;
+                }
+            })
+            .catch(() => {
+                updaterMessage.textContent = 'Error performing update.';
+                performUpdateBtn.disabled = false;
+            });
+    });
+
+    // Settings dropdown toggle
+    const settingsBtn = document.getElementById('settingsBtn');
+    const settingsDropdown = document.getElementById('settingsDropdown');
+
+    settingsBtn.addEventListener('click', () => {
+        if (settingsDropdown.style.display === 'block') {
+            settingsDropdown.style.display = 'none';
+        } else {
+            settingsDropdown.style.display = 'block';
+        }
+    });
+
+    window.addEventListener('click', (event) => {
+        if (!settingsBtn.contains(event.target) && !settingsDropdown.contains(event.target)) {
+            settingsDropdown.style.display = 'none';
+        }
+    });
+
+    // Open updater modal from dropdown link
+    const openUpdaterModalBtnDropdown = document.getElementById('openUpdaterModalBtnDropdown');
+    openUpdaterModalBtnDropdown.addEventListener('click', (e) => {
+        e.preventDefault();
+        updaterModal.style.display = 'block';
+        settingsDropdown.style.display = 'none';
+    });
 </script>
 
 </body>

@@ -1,20 +1,18 @@
 <?php
-
 namespace App\Http\Controllers;
 
-use App\Models\Tenant;
 use Illuminate\Http\Request;
+use App\Models\Tenant;
 
 class AdminDashboardController extends Controller
 {
     public function index()
-        {
-            // Fetch all tenants
-        $tenants = Tenant::all(); // Fetch all tenants from the database
+    {
+        $currentVersion = config('app.version', 'unknown');
+        $latestVersion = null; // Optionally, fetch latest version here or leave null
 
-        // You might want to count users or any other logic here
-        $userCount = 0; // Initialize or fetch user count as needed
+        $tenants = Tenant::all();
 
-        return view('admin.dashboard', compact('tenants', 'userCount'));
-        }
+        return view('admin.dashboard', compact('tenants', 'currentVersion', 'latestVersion'));
+    }
 }
