@@ -29,6 +29,15 @@
         </div>
 
         <div style="margin-bottom: 1rem;">
+            <label for="subscription_plan" style="display: block; font-weight: bold;">Subscription Plan</label>
+            <select id="subscription_plan" name="subscription_plan" required style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;">
+                <option value="basic" {{ old('subscription_plan', $tenant->subscription_plan) == 'basic' ? 'selected' : '' }}>Basic</option>
+                <option value="advance" {{ old('subscription_plan', $tenant->subscription_plan) == 'advance' ? 'selected' : '' }}>Advance</option>
+                <option value="pro" {{ old('subscription_plan', $tenant->subscription_plan) == 'pro' ? 'selected' : '' }}>Pro</option>
+            </select>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
             <label for="password" style="display: block; font-weight: bold;">Password (leave blank to keep current)</label>
             <input type="password" id="password" name="password" style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;">
         </div>

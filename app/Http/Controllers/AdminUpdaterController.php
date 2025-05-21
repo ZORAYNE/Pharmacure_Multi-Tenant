@@ -43,7 +43,7 @@ class AdminUpdaterController extends Controller
             // Pull latest changes from GitHub repo
             $output = null;
             $returnVar = null;
-            exec('git pull origin main 2>&1', $output, $returnVar);
+            exec('git pull origin master 2>&1', $output, $returnVar);
 
             if ($returnVar !== 0) {
                 Log::error('Git pull failed: ' . implode("\n", $output));
@@ -56,7 +56,12 @@ class AdminUpdaterController extends Controller
             Artisan::call('route:cache');
             Artisan::call('view:cache');
 
-            return response()->json(['success' => true, 'message' => 'Update completed successfully.']);
+            $currentVersion = config('app.version', 'unknown');
+            $latestVersion = $this->getLatestReleaseVersion();
+
+            $message = "Update completed successfully. Updated from version {$currentVersion} to {$latestVersion}. Changes include bug fixes, performance improvements, and new features.";
+
+            return response()->json(['success' => true, 'message' => $message]);
         } catch (\Exception $e) {
             Log::error('Update error: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Update failed: ' . $e->getMessage()]);

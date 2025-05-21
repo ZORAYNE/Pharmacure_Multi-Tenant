@@ -16,6 +16,7 @@ class Tenant extends Authenticatable
         'role',
         'password',
         'status',
+        'subscription_plan',
     ];
 
     protected $hidden = [

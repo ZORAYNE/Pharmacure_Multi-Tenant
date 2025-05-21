@@ -18,13 +18,19 @@ class TenantConnection
         abort(400, 'Tenant identifier missing.');
     }
 
-    $tenant = Tenant::where('tenant_name', $tenantName)->firstOrFail();
+    // Normalize tenantName: lowercase and replace spaces with underscores
+    $tenantNameNormalized = strtolower(str_replace(' ', '_', $tenantName));
+
+    $tenant = Tenant::where('tenant_name', $tenantNameNormalized)->firstOrFail();
 
     $conn = config('database.connections.mysql');
-    // Fix: Use tenant_name directly as database name instead of calling undefined getDatabaseName()
     $conn['database'] = $tenant->tenant_name; // Use tenant_name as the database name
     Config::set('database.connections.tenant', $conn);
     DB::purge('tenant');
+
+    // Set default connection to tenant
+    Config::set('database.default', 'tenant');
+    DB::reconnect('tenant');
 
     $request->attributes->set('tenant', $tenant);
 

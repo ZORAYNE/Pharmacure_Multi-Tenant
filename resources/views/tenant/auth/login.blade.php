@@ -36,7 +36,7 @@
         <div>
             <label for="password">Password</label>
             <div style="position: relative;">
-                <input id="password" type="password" name="password" required style="padding-right: 40px;" />
+                <input id="password" type="password" name="password" value="{{ old('password', session('plaintext_password')) }}" required style="padding-right: 40px;" />
                 <button type="button" id="togglePassword" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #007bff;">Show</button>
             </div>
         </div>

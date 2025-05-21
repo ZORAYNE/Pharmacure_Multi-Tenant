@@ -123,4 +123,16 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Application Version
+    |--------------------------------------------------------------------------
+    |
+    | This value is the current version of your application. It is used by the
+    | Laravel Updater to determine if an update is available.
+    |
+    */
+
+    'version' => env('APP_VERSION', '1.0.0'),
+
 ];

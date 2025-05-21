@@ -3,51 +3,39 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class ProductSeeder extends Seeder
 {
-    public function run()
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
     {
         $now = Carbon::now();
+        $expirationDate = $now->copy()->addYear();
 
-        DB::connection('tenant')->table('products')->insert([
-            [
-                'name' => 'Product A',
-                'price' => 10.99,
-                'quantity' => 100,
+        // Seed only to tenant database connection
+        $tenantConnection = DB::connection('tenant');
+
+        // Output the database name to verify connection
+        echo 'Seeding products to database: ' . $tenantConnection->getDatabaseName() . PHP_EOL;
+
+        $tenantConnection->table('products')->truncate();
+
+        for ($i = 1; $i <= 100; $i++) {
+            $tenantConnection->table('products')->insert([
+                'name' => 'Product ' . $i,
+                'brand' => 'Brand ' . $i,
+                'price' => mt_rand(100, 10000) / 100, // random price between 1.00 and 100.00
+                'stock_quantity' => 50,
+                'expiration_date' => $expirationDate,
+                'picture' => null,
                 'created_at' => $now,
                 'updated_at' => $now,
-            ],
-            [
-                'name' => 'Product B',
-                'price' => 15.50,
-                'quantity' => 50,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
-            [
-                'name' => 'Product C',
-                'price' => 7.25,
-                'quantity' => 200,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
-            [
-                'name' => 'Product D',
-                'price' => 20.00,
-                'quantity' => 30,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
-            [
-                'name' => 'Product E',
-                'price' => 5.75,
-                'quantity' => 150,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
-        ]);
+            ]);
+        }
     }
 }

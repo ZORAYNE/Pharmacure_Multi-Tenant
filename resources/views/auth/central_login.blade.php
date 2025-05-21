@@ -1,85 +1,138 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
+    <meta charset="UTF-8">
     <title>Central Admin Login</title>
-    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f8f9fa; margin: 0; padding: 2rem; transition: background-color 0.3s, color 0.3s; }
-        body.dark-theme { background-color: #121212; color: #e0e0e0; }
-        .container { max-width: 400px; margin: auto; padding: 2rem; background: white; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); transition: background-color 0.3s, color 0.3s; }
-        body.dark-theme .container { background: #1e1e1e; color: #e0e0e0; }
-        h1 { text-align: center; color: #333; }
-        body.dark-theme h1 { color: #e0e0e0; }
-        label { display: block; margin-top: 1rem; }
-        input { width: 100%; padding: 0.5rem; margin-top: 0.25rem; border: 1px solid #ddd; border-radius: 4px; background: white; color: black; }
-        body.dark-theme input { background: #333; color: #e0e0e0; border: 1px solid #555; }
-        button { width: 100%; margin-top: 1rem; padding: 0.75rem; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background-color: #0056b3; }
-        .error { color: red; }
-        .info { margin-top: 1rem; text-align: center; }
-        a { color: #007bff; text-decoration: none; }
-        a:hover { text-decoration: underline; }
-        .theme-toggle-btn {
-            margin-top: 1rem;
+        body {
+            background-color: #111827;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .card {
+            background-color: #1f2937;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
             width: 100%;
-            padding: 0.5rem;
-            background-color: #6c757d;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .card h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            color: white;
+            font-weight: bold;
+        }
+
+        label {
+            display: block;
+            text-align: left;
+            margin-bottom: 0.5rem;
+            color: #e5e7eb;
+            font-weight: 500;
+        }
+
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 0.6rem;
+            border-radius: 0.375rem;
+            border: none;
+            background-color: #e5e7eb;
+            margin-bottom: 1rem;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 0.6rem;
+            background-color: #3b82f6;
+            border: none;
+            color: white;
+            font-weight: bold;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn-login:hover {
+            background-color: #2563eb;
+        }
+
+        .links {
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: #d1d5db;
+        }
+
+        .links a {
+            color: #3b82f6;
+            text-decoration: none;
+            margin-left: 0.25rem;
+        }
+
+        .toggle-btn {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.5rem 1rem;
+            background-color: #4b5563;
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 0.375rem;
             cursor: pointer;
-        }
-        .theme-toggle-btn:hover {
-            background-color: #5a6268;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Central Admin Login</h1>
 
-        @if(session('error'))
-            <div class="error">{{ session('error') }}</div>
-        @endif
+    <button class="toggle-btn" onclick="toggleTheme()">Toggle Dark/Light Theme</button>
 
+    <div class="card">
+        <h2>Central Admin Login</h2>
         <form method="POST" action="{{ route('central.admin.login') }}">
             @csrf
-            <label for="email">Email</label>
-            <input id="email" name="email" type="email" required autofocus />
-
-            <label for="password">Password</label>
-            <input id="password" name="password" type="password" required />
-
-            <button type="submit">Login</button>
+            <div>
+                <label for="email">Email</label>
+                <input id="email" type="email" name="email" required value="{{ old('email') }}">
+            </div>
+            <div>
+                <label for="password">Password</label>
+                <input id="password" type="password" name="password" required>
+            </div>
+            <button class="btn-login" type="submit">Login</button>
         </form>
 
-        <button class="theme-toggle-btn" id="themeToggleBtn">Toggle Dark/Light Theme</button>
-
-        <div class="info">
-            <p>Want to be a tenant? <a href="{{ route('tenant.register') }}">Register here</a></p>
-            <p>Are you a tenant? <a href="{{ route('tenant.login') }}">Tenant Login</a></p>
+        <div class="links">
+            <p>Want to be a tenant?
+                <a href="{{ route('tenant.register') }}">Register here</a>
+            </p>
+            <p>Are you a tenant?
+                <a href="{{ route('tenant.login') }}">Tenant Login</a>
+            </p>
         </div>
     </div>
 
     <script>
-        const themeToggleBtn = document.getElementById('themeToggleBtn');
-        const currentTheme = localStorage.getItem('theme') || 'light';
-
-        function applyTheme(theme) {
-            if (theme === 'dark') {
-                document.body.classList.add('dark-theme');
+        function toggleTheme() {
+            const html = document.documentElement;
+            if (html.getAttribute('data-theme') === 'dark') {
+                html.setAttribute('data-theme', 'light');
+                document.body.style.backgroundColor = '#f9fafb';
             } else {
-                document.body.classList.remove('dark-theme');
+                html.setAttribute('data-theme', 'dark');
+                document.body.style.backgroundColor = '#111827';
             }
         }
-
-        applyTheme(currentTheme);
-
-        themeToggleBtn.addEventListener('click', () => {
-            const newTheme = document.body.classList.contains('dark-theme') ? 'light' : 'dark';
-            applyTheme(newTheme);
-            localStorage.setItem('theme', newTheme);
-        });
     </script>
+
 </body>
 </html>

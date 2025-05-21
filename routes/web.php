@@ -1,14 +1,19 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\PharmacistController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\Auth\GoogleController;
+use App\Http\Controllers\SaleController;
 use App\Http\Controllers\AdminTenantController;
 use App\Http\Controllers\TenantRegistrationController;
 use App\Http\Controllers\TenantDashboardController;
 use App\Http\Controllers\TenantAuthController;
 use App\Http\Controllers\CentralAdminAuthController;
 use App\Http\Controllers\AdminDashboardController;
-use App\Http\Controllers\SaleController;
 use App\Http\Controllers\AdminUpdaterController;
+use App\Http\Controllers\ProductController;
+
 
 // Test database connection
 Route::get('/test-connection', function () {
@@ -54,18 +59,48 @@ Route::middleware([StoreTenantInSession::class])->group(function () {
 use App\Http\Middleware\TenantConnection;
 
 Route::prefix('{tenant}')->middleware(['tenant.connection'])->group(function () {
+    // tenant routes
     Route::get('dashboard', [TenantDashboardController::class, 'dashboard'])->name('tenant.dashboard');
-    Route::post('/tenant/users', [TenantDashboardController::class, 'store'])->name('tenant.users.store');
     Route::get('/tenant/pos/dashboard', [TenantDashboardController::class, 'dashboard'])->name('tenant.pos.dashboard');
     Route::get('/tenant/dashboard', [TenantDashboardController::class, 'tenantDashboard'])->name('tenant.dashboard.view');
-    Route::get('reports/sales', [SaleController::class, 'salesReport'])->name('sales.report');
-    Route::get('reports/products', [SaleController::class, 'productReport'])->name('products.report');
-    Route::get('sales/{sale}/invoice', [SaleController::class, 'generateInvoice'])->name('sales.invoice');
     Route::get('pos', [SaleController::class, 'index'])->name('pos.index');
     Route::get('/tenant/users/create', [TenantDashboardController::class, 'usersCreate'])->name('tenant.users.create');
     Route::get('/tenant/profile/edit', [TenantDashboardController::class, 'editProfile'])->name('tenant.profile.edit');
-    Route::get('tenant/pos/index', [TenantDashboardController::class, 'dashboard'])->name('tenant.pos.index');
-    Route::post('sales', [SaleController::class, 'store'])->name('sales.store');
+    Route::post('/tenant/profile/update', [TenantProfileController::class, 'update'])->name('tenant.profile.update');
+    Route::get('tenant/pos/index', [SaleController::class, 'index'])->name('tenant.pos.index');
+    Route::get('tenant/pos/page', [SaleController::class, 'posPage'])->name('tenant.pos.page');
+    Route::post('users', [TenantDashboardController::class, 'store'])->name('tenant.users.store');
+    
+    // New route for subscription plan update
+    Route::post('tenant/update-subscription-plan', [TenantDashboardController::class, 'updateSubscriptionPlan'])->name('tenant.updateSubscriptionPlan');
+  
+    // Sales routes  
+    Route::resource('sales', SaleController::class)->only(['index', 'create', 'store', 'show']);
+    Route::get('sales/{sale}/invoice', [SaleController::class, 'generateInvoice'])->name('sales.invoice');
+
+    // Product routes
+    Route::get('products/create', [ProductController::class, 'create'])->name('tenant.products.create');
+    Route::post('products', [ProductController::class, 'store'])->name('tenant.products.store');
+    Route::match(['put', 'patch'], 'products/{product}', [ProductController::class, 'update'])->name('tenant.products.update');
+
+    Route::delete('products/{product}', [ProductController::class, 'destroy'])->name('tenant.products.destroy');
+
+    // Report routes
+    Route::get('reports', [ReportController::class, 'showReportForm'])->name('reports.index');
+    Route::post('reports/generate', [ReportController::class, 'generateReport'])->name('reports.generate');
+    Route::get('reports/sales', [SaleController::class, 'salesReport'])->name('sales.report');
+    Route::get('reports/products', [SaleController::class, 'productReport'])->name('products.report');
+    
+     // Pharmacist routes
+    Route::get('pharmacists', [PharmacistController::class, 'index'])->name('pharmacists.index');
+    Route::get('pharmacists/create', [PharmacistController::class, 'create'])->name('pharmacists.create');
+    Route::post('pharmacists', [PharmacistController::class, 'store'])->name('pharmacists.store');
+
+
+});
+
+ Route::group(['prefix' => '{tenant}', 'middleware' => ['auth', 'tenant']], function () {
+    Route::resource('pharmacists', PharmacistController::class)->except(['show', 'create']);
 });
 
 // Google authentication
@@ -86,3 +121,14 @@ Route::put('admin/profile/update', [CentralAdminProfileController::class, 'updat
 Route::get('/', function () {
     return redirect()->route('central.admin.login');
 });
+
+Route::get('auth/google', [GoogleController::class, 'redirectToGoogle'])->name('auth.google');
+Route::get('auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
+
+
+Route::prefix('{tenant}')->group(function () {
+    Route::post('/reports/send-email', [ReportController::class, 'sendEmail'])->name('reports.sendEmail');
+});
+
+
+

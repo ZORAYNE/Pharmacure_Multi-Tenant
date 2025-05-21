@@ -5,7 +5,22 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
-        body { font-family: Arial, sans-serif; margin: 2rem; }
+        html, body {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            font-family: Arial, sans-serif;
+        }
+        body {
+            /* Remove margin, padding moved to container */
+        }
+        .container {
+            flex: 1 0 auto;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+        }
         table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background-color: #f2f2f2; }
@@ -133,6 +148,43 @@
         .form-table button[type="submit"]:hover {
             background-color: #218838;
         }
+        footer {
+            flex-shrink: 0;
+            margin-top: 2rem;
+            font-size: 0.9em;
+            color: #666;
+        }
+        .btn {
+        padding: 0.4rem 0.8rem;
+        border: none;
+        border-radius: 4px;
+        color: white;
+        cursor: pointer;
+        font-weight: 600;
+        margin-right: 0.5rem;
+    }
+    .accept-btn {
+        background-color: #28a745; /* Green */
+    }
+    .delete-btn, .disable-btn {
+        background-color: #dc3545; /* Red */
+    }
+    .edit-btn {
+        background-color: #007bff; /* Blue */
+    }
+    .status {
+        padding: 0.3rem 0.6rem;
+        border-radius: 4px;
+        font-weight: 600;
+        color: white;
+        display: inline-block;
+    }
+    .status.accepted {
+        background-color: #28a745; /* Green */
+    }
+    .status.pending {
+        background-color: #007bff; /* Blue */
+    }
     </style>
 </head>
 <body>
@@ -140,11 +192,24 @@
 <!-- Navbar -->
 <nav style="background-color: #007bff; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center;">
     <div style="font-size: 20px; font-weight: bold;">Central Admin Dashboard</div>
-    <div style="position: relative;">
-        <button id="settingsBtn" style="background: none; border: none; color: white; font-size: 16px; cursor: pointer;">Settings &#x25BC;</button>
-        <div id="settingsDropdown" style="display: none; position: absolute; right: 0; background: white; color: black; border: 1px solid #ccc; border-radius: 4px; min-width: 160px; box-shadow: 0 2px 5px rgba(0,0,0,0.15); z-index: 1001;">
-            <a href="#" id="openUpdaterModalBtnDropdown" style="display: block; padding: 10px 15px; text-decoration: none; color: black; cursor: pointer;">Laravel Updater</a>
-            <a href="{{ route('central.admin.profile.edit') }}" style="display: block; padding: 10px 15px; text-decoration: none; color: black;">Profile</a>
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="position: relative;">
+            <button id="themeToggleBtn" type="button" style="background: none; border: none; color: white; font-size: 16px; cursor: pointer;">Toggle Light/Dark Theme</button>
+        </div>
+        <div style="position: relative;">
+            <button id="settingsBtn" style="background: none; border: none; color: white; font-size: 16px; cursor: pointer;">Settings &#x25BC;</button>
+            <div id="settingsDropdown" style="display: none; position: absolute; right: 0; background: white; color: black; border: 1px solid #ccc; border-radius: 4px; min-width: 160px; box-shadow: 0 2px 5px rgba(0,0,0,0.15); z-index: 1001;">
+                <a href="#" id="openUpdaterModalBtnDropdown" style="display: block; padding: 10px 15px; text-decoration: none; color: black; cursor: pointer;">Laravel Updater</a>
+                <a href="#" id="openProfileModalBtn" style="display: block; padding: 10px 15px; text-decoration: none; color: black; cursor: pointer;">Profile</a>
+
+            <!-- Profile Modal -->
+            <div id="profileModal" class="modal">
+                <div class="modal-content">
+                    <span class="close" id="closeProfileModalBtn">&times;</span>
+                    <h2>Profile Information</h2>
+                    <p>This is a popup message modal for the Profile button.</p>
+                </div>
+            </div>
             <form method="POST" action="{{ route('central.admin.logout') }}" style="margin: 0;">
                 @csrf
                 <button type="submit" style="width: 100%; padding: 10px 15px; border: none; background: none; text-align: left; cursor: pointer; color: black;">Logout</button>
@@ -153,73 +218,126 @@
     </div>
 </nav>
 
-<h2>Registered Tenants</h2>
-@if(session('success'))
-    <p class="success">{{ session('success') }}</p>
-@endif
-@if($errors->any())
-    <div class="error">
-        <ul>
-            @foreach($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-@endif
+<script>
+    // Profile modal functionality
+    const profileModal = document.getElementById('profileModal');
+    const openProfileModalBtn = document.getElementById('openProfileModalBtn');
+    const closeProfileModalBtn = document.getElementById('closeProfileModalBtn');
 
-<button id="openModalBtn">Register New Tenant</button>
+    if (openProfileModalBtn) {
+        openProfileModalBtn.onclick = function() {
+            if (profileModal) {
+                profileModal.style.display = "block";
+            }
+        }
+    }
 
-<table>
-    <thead>
-        <tr>
-            <th>Tenant Name</th>
-            <th>Full Name</th>
-            <th>Email</th>
-            <th>Date Created</th>
-            <th>Status</th>
-            <th>Action</th>
-            <th>Tenant Login</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach($tenants as $tenant)
+    if (closeProfileModalBtn) {
+        closeProfileModalBtn.onclick = function() {
+            if (profileModal) {
+                profileModal.style.display = "none";
+            }
+        }
+    }
+
+    window.onclick = function(event) {
+        if (profileModal && event.target == profileModal) {
+            profileModal.style.display = "none";
+        }
+    }
+
+    // Theme toggle button functionality
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    const body = document.body;
+
+    // Load saved theme from localStorage
+    if (localStorage.getItem('theme') === 'dark') {
+        body.style.backgroundColor = '#121212';
+        body.style.color = '#e0e0e0';
+    }
+
+    themeToggleBtn.addEventListener('click', () => {
+        if (body.style.backgroundColor === 'rgb(18, 18, 18)') {
+            body.style.backgroundColor = '';
+            body.style.color = '';
+            localStorage.setItem('theme', 'light');
+        } else {
+            body.style.backgroundColor = '#121212';
+            body.style.color = '#e0e0e0';
+            localStorage.setItem('theme', 'dark');
+        }
+    });
+</script>
+
+<div class="container">
+    <h2>Registered Tenants</h2>
+    @if(session('success'))
+        <p class="success">{{ session('success') }}</p>
+    @endif
+    @if($errors->any())
+        <div class="error">
+            <ul>
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    <button id="openModalBtn" style="width: 2.25in;">Register New Tenant</button>
+
+    <table>
+        <thead>
             <tr>
-                <td>{{ $tenant->tenant_name }}</td>
-                <td>{{ $tenant->full_name }}</td>
-                <td>{{ $tenant->email }}</td>
-                <td>{{ $tenant->created_at->format('Y-m-d') }}</td>
-                <td>{{ ucfirst($tenant->status) }}</td>
-                <td>
-                    @if($tenant->status === 'pending')
-                        <form method="POST" action="{{ route('admin.tenants.accept', $tenant->tenant_name) }}" style="display:inline;">
-                            @csrf
-                            <button type="submit" class="button-link">Accept</button>
-                        </form>
-                        <form method="POST" action="{{ route('admin.tenants.delete', $tenant->tenant_name) }}" style="display:inline;">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="button-link" onclick="return confirm('Are you sure you want to delete this tenant?')">Delete</button>
-                        </form>
-                    @elseif($tenant->status === 'accepted')
-                        <form method="POST" action="{{ route('admin.tenants.revert', $tenant->tenant_name) }}" style="display:inline;">
-                            @csrf
-                            @method('PATCH')
-                            <button type="submit" class="button-link">Disable</button>
-                        </form>
-                    @endif
-                    <a href="{{ route('admin.tenants.edit', $tenant->tenant_name) }}" class="button-link">Edit</a>
-                </td>
-                <td>
-                    @if($tenant->status === 'accepted')
-                    <a href="{{ url('/login', [], false) }}?tenant={{ $tenant->tenant_name }}" target="_blank" class="button-link">Tenant Login</a>
-                    @else
-                        <span style="color: grey;">Not available</span>
-                    @endif
-                </td>
+                <th>Tenant Name</th>
+                <th>Full Name</th>
+                <th>Email</th>
+                <th>Date Created</th>
+                <th>Status</th>
+                <th>Action</th>
+                <th>Tenant Login</th>
             </tr>
-        @endforeach
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach($tenants as $tenant)
+                <tr>
+                    <td>{{ $tenant->tenant_name }}</td>
+                    <td>{{ $tenant->full_name }}</td>
+                    <td>{{ $tenant->email }}</td>
+                    <td>{{ $tenant->created_at->format('Y-m-d') }}</td>
+                    <td>{{ ucfirst($tenant->status) }}</td>
+    <td>
+        @if($tenant->status === 'pending')
+            <form method="POST" action="{{ route('admin.tenants.accept', $tenant->tenant_name) }}" style="display:inline;">
+                @csrf
+                <button type="submit" class="btn accept-btn">Accept</button>
+            </form>
+            <form method="POST" action="{{ route('admin.tenants.delete', $tenant->tenant_name) }}" style="display:inline;">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn delete-btn" onclick="return confirm('Are you sure you want to delete this tenant?')">Delete</button>
+            </form>
+        @elseif($tenant->status === 'accepted')
+            <form method="POST" action="{{ route('admin.tenants.revert', $tenant->tenant_name) }}" style="display:inline;">
+                @csrf
+                @method('PATCH')
+                <button type="submit" class="btn disable-btn">Disable</button>
+            </form>
+        @endif
+        <a href="{{ route('admin.tenants.edit', $tenant->tenant_name) }}" class="btn edit-btn">Edit</a>
+    </td>
+    <td>
+        @if($tenant->status === 'accepted')
+        <a href="{{ url('/login', [], false) }}?tenant={{ $tenant->tenant_name }}" target="_blank" class="button-link">Tenant Login</a>
+        @else
+            <span style="color: grey;">Not available</span>
+        @endif
+    </td>
+                </tr>
+            @endforeach
+        </tbody>
+    </table>
+</div>
 
 <!-- Modal -->
 <div id="tenantRegisterModal" class="modal">
@@ -285,16 +403,24 @@
     const openModalBtn = document.getElementById('openModalBtn');
     const closeModalBtn = document.getElementById('closeModalBtn');
 
-    openModalBtn.onclick = function() {
-        modal.style.display = "block";
+    if (openModalBtn) {
+        openModalBtn.onclick = function() {
+            if (modal) {
+                modal.style.display = "block";
+            }
+        }
     }
 
-    closeModalBtn.onclick = function() {
-        modal.style.display = "none";
+    if (closeModalBtn) {
+        closeModalBtn.onclick = function() {
+            if (modal) {
+                modal.style.display = "none";
+            }
+        }
     }
 
     window.onclick = function(event) {
-        if (event.target == modal) {
+        if (modal && event.target == modal) {
             modal.style.display = "none";
         }
     }
@@ -315,9 +441,35 @@
     </div>
 </div>
 
-<button id="openUpdaterModalBtn" style="margin-left: 10px; padding: 6px 12px; font-size: 14px; cursor: pointer;">Open Updater</button>
+
+<!-- Move footer to the bottom of the page -->
+<footer>
+    <div>
+        Date and Time: {{ \Carbon\Carbon::now()->format('Y-m-d H:i:s') }}
+    </div>
+    <div>
+        Laravel Version: {{ app()->version() }}
+    </div>
+</footer>
+</body>
+</html>
+
+@if(session('tenantAccepted'))
+<x-modal id="tenantAcceptedModal">
+    <p>Tenant has been accepted, the tenant link has been sent to the email.</p>
+</x-modal>
 
 <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var modal = document.getElementById('tenantAcceptedModal');
+        if (modal) {
+            modal.style.display = 'block';
+        }
+    });
+</script>
+@endif
+<script>
+    //Laravel Updater Modal
     const updaterModal = document.getElementById('updaterModal');
     const openUpdaterModalBtn = document.getElementById('openUpdaterModalBtn');
     const closeUpdaterModalBtn = document.getElementById('closeUpdaterModalBtn');
@@ -326,16 +478,24 @@
     const updaterMessage = document.getElementById('updaterMessage');
     const latestVersionSpan = document.getElementById('latestVersion');
 
-    openUpdaterModalBtn.onclick = function() {
-        updaterModal.style.display = 'block';
+    if (openUpdaterModalBtn) {
+        openUpdaterModalBtn.onclick = function() {
+            if (updaterModal) {
+                updaterModal.style.display = 'block';
+            }
+        }
     }
 
-    closeUpdaterModalBtn.onclick = function() {
-        updaterModal.style.display = 'none';
+    if (closeUpdaterModalBtn) {
+        closeUpdaterModalBtn.onclick = function() {
+            if (updaterModal) {
+                updaterModal.style.display = 'none';
+            }
+        }
     }
 
     window.onclick = function(event) {
-        if (event.target == updaterModal) {
+        if (updaterModal && event.target == updaterModal) {
             updaterModal.style.display = 'none';
         }
     }
@@ -391,13 +551,15 @@
     const settingsBtn = document.getElementById('settingsBtn');
     const settingsDropdown = document.getElementById('settingsDropdown');
 
-    settingsBtn.addEventListener('click', () => {
-        if (settingsDropdown.style.display === 'block') {
-            settingsDropdown.style.display = 'none';
-        } else {
-            settingsDropdown.style.display = 'block';
-        }
-    });
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', () => {
+            if (settingsDropdown.style.display === 'block') {
+                settingsDropdown.style.display = 'none';
+            } else {
+                settingsDropdown.style.display = 'block';
+            }
+        });
+    }
 
     window.addEventListener('click', (event) => {
         if (!settingsBtn.contains(event.target) && !settingsDropdown.contains(event.target)) {
@@ -407,11 +569,13 @@
 
     // Open updater modal from dropdown link
     const openUpdaterModalBtnDropdown = document.getElementById('openUpdaterModalBtnDropdown');
-    openUpdaterModalBtnDropdown.addEventListener('click', (e) => {
-        e.preventDefault();
-        updaterModal.style.display = 'block';
-        settingsDropdown.style.display = 'none';
-    });
+    if (openUpdaterModalBtnDropdown) {
+        openUpdaterModalBtnDropdown.addEventListener('click', (e) => {
+            e.preventDefault();
+            updaterModal.style.display = 'block';
+            settingsDropdown.style.display = 'none';
+        });
+    }
 </script>
 
 </body>

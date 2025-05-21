@@ -10,9 +10,12 @@ class CreateProductsTable extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
+             $table->string('picture')->nullable();
             $table->string('name');
+            $table->string('brand');
             $table->decimal('price', 8, 2);
-            $table->integer('quantity');
+            $table->integer('stock_quantity');
+            $table->date('expiration_date')->nullable();
             $table->timestamps();
         });
     }

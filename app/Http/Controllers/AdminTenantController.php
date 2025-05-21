@@ -73,7 +73,7 @@ class AdminTenantController extends Controller
        return redirect()->route('admin.dashboard')->with('success', 'Tenant updated successfully.');
    }
 
-   public function accept($tenantName)
+   public function accept($tenantName, Request $request)
    {
        $tenant = Tenant::where('tenant_name', $tenantName)->firstOrFail();
        $tenant->status = 'accepted';
@@ -95,7 +95,14 @@ class AdminTenantController extends Controller
            // 4) Create user in the tenant database
            $this->createUserInTenantDatabase($tenant);
 
-           return redirect()->back()->with('success', 'Tenant accepted and database created.');
+           // 5) Send acceptance email to tenant
+           // Pass plaintext password to mail class
+           \Mail::to($tenant->email)->send(new \App\Mail\TenantAcceptedMail($tenant, $request->input('password')));
+
+           return redirect()->back()
+               ->with('success', 'Tenant accepted and database created.')
+               ->with('tenantAccepted', true)
+               ->with('plaintext_password', $request->input('password'));
        } catch (\Exception $e) {
            return redirect()->back()->withErrors(['database' => 'Failed to create or migrate tenant database: ' . $e->getMessage()]);
        }

@@ -147,5 +147,14 @@
     </tbody>
 </table>
 
+<footer style="margin-top: 2rem; font-size: 0.9em; color: #666;">
+    <div>
+        Date and Time: {{ \Carbon\Carbon::now()->format('Y-m-d H:i:s') }}
+    </div>
+    <div>
+        Laravel Version: {{ app()->version() }}
+    </div>
+</footer>
+
 </body>
 </html>

@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Register route middleware here if using Laravel 11 style
         $middleware->alias([
             'tenant.connection' => TenantConnection::class,
+            'auth.tenant' => \App\Http\Middleware\RedirectIfTenantUnauthenticated::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

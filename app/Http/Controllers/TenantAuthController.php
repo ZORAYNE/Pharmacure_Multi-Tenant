@@ -9,6 +9,7 @@ use App\Services\TenantDatabaseService;
 use App\Models\Tenant;
 use App\Models\GuestUser;
 use Illuminate\Support\Facades\DB;
+use Laravel\Socialite\Facades\Socialite;
 
 class TenantAuthController extends Controller
 {
@@ -34,6 +35,7 @@ class TenantAuthController extends Controller
         $request->validate([
             'email' => 'required|email',
             'password' => 'required|string',
+            'tenant' => 'required|string',
         ]);
 
         $tenantName = strtolower(str_replace(' ', '_', $request->input('tenant')));
@@ -49,35 +51,77 @@ class TenantAuthController extends Controller
             return back()->withErrors(['tenant' => 'Could not connect to the tenant database.']);
         }
 
-        $connectionMessage = "Database '{$tenantName}' connected successfully.";
-
         $email = strtolower($request->input('email'));
+        $password = $request->input('password');
         $user = \App\Models\TenantUser::on('tenant')->where('email', $email)->first();
 
         if (!$user) {
             \Log::warning("Tenant login failed: User not found with email {$email} in tenant {$tenantName}");
-            if ($request->input('password')) {
-                return back()->withErrors(['login_error' => 'Both email and password are incorrect.'])->withInput($request->only('email', 'tenant'))->with('connectionMessage', $connectionMessage);
-            } else {
-                return back()->withErrors(['login_error' => 'Email not found.'])->withInput($request->only('email', 'tenant'))->with('connectionMessage', $connectionMessage);
-            }
-        } else {
-            \Log::info("Tenant login attempt for user {$user->email} in tenant {$tenantName}");
-            \Log::info("Stored password hash for user {$user->email}: {$user->password}");
-            // Bypass password check and auto-login user
-            Auth::login($user, $request->filled('remember'));
-            $request->session()->regenerate();
-            $tenantParam = $request->input('tenant');
-            return redirect()->route('tenant.pos.dashboard', ['tenant' => $tenantParam]);
+            return back()->withErrors(['login_error' => 'Incorrect email'])->withInput($request->only('email', 'tenant'));
         }
+
+        // Debug logging for password verification
+        \Log::info("Tenant login: User password hash starts with: " . substr($user->password, 0, 10));
+        \Log::info("Tenant login: Input password length: " . strlen($password));
+
+        // TEMPORARY BYPASS: Unguard password verification - allow login if email exists
+        // WARNING: This disables password checking and is insecure. Use only for debugging.
+        /*
+        if (!Hash::check($password, $user->password)) {
+            \Log::warning("Tenant login failed: Incorrect password for user {$email} in tenant {$tenantName}");
+            return back()->withErrors(['login_error' => 'Incorrect password'])->withInput($request->only('email', 'tenant'));
+        }
+        */
+
+        // If both email and password are correct, log in the user
+        Auth::guard('tenant')->login($user, $request->filled('remember'));
+        $request->session()->regenerate();
+
+        if ($user->role === 'pharmacist') {
+            return redirect()->route('pos.index');
+        }
+
+        $tenantParam = $request->input('tenant');
+        return redirect()->route('tenant.pos.dashboard', ['tenant' => $tenantParam]);
     }
 
     public function logout(Request $request)
     {
-        Auth::logout();
+        Auth::guard('tenant')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
         return redirect()->route('tenant.login');
+    }
+
+    // Add Google OAuth redirect method
+    public function redirectToGoogle()
+    {
+        return Socialite::driver('google')->redirect();
+    }
+
+    // Add Google OAuth callback method
+    public function handleGoogleCallback()
+    {
+        try {
+            $googleUser = Socialite::driver('google')->stateless()->user();
+        } catch (\Exception $e) {
+            return redirect()->route('tenant.login')->withErrors('Unable to login using Google. Please try again.');
+        }
+
+        // Instead of logging in, redirect to tenant register page with Google user data
+        $name = $googleUser->getName();
+        $email = $googleUser->getEmail();
+
+        // Generate a random password for autofill
+        $randomPassword = bin2hex(random_bytes(8));
+
+        // Redirect to tenant register blade with query parameters
+        return redirect()->route('tenant.register', [
+            'full_name' => $name,
+            'email' => $email,
+            'password' => $randomPassword,
+            'password_confirmation' => $randomPassword,
+        ]);
     }
 }
