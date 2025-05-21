@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\TestController;
 use App\Http\Controllers\PharmacistController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\Auth\GoogleController;

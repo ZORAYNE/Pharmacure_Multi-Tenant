@@ -73,7 +73,11 @@ class AdminUpdaterController extends Controller
         try {
             $response = Http::get("https://api.github.com/repos/{$this->githubRepo}/releases/latest");
             if ($response->successful()) {
-                return $response->json()['tag_name'] ?? null;
+                $tagName = $response->json()['tag_name'] ?? null;
+                if ($tagName && strpos($tagName, 'v') === 0) {
+                    $tagName = substr($tagName, 1);
+                }
+                return $tagName;
             }
         } catch (\Exception $e) {
             Log::error('GitHub API error: ' . $e->getMessage());
